@@ -1,0 +1,39 @@
+<!--pages/todos/todos.wxml-->
+<view class="container">
+  <view class="header">
+    <image class="plus" src="/images/calender.png"/>
+    <picker mode="multiSelector" bindchange="bindMultiPickerChange" bindcolumnchange="bindMultiPickerColumnChange" value="{{multiIndex}}" range="{{multiArray}}">
+      <input class="new-date" value="{{ time }}" placeholder='截止时间...' disabled="true"/>
+    </picker>
+  </view>
+  <view class="header">
+    <image class="plus" src="/images/plus.png"/>
+    <input class="new-todo" value="{{ input }}" placeholder="添加事项..." bindinput="inputChangeHandle" />
+  </view>
+  <view class="confirm" >
+    <button type="primary" bindtap="addTodoHandle">添加</button>
+  </view>
+  <block wx:if="{{ todos.length }}">
+    <view class="todos">
+      <!-- List items should get the class `completed` when marked as completed -->
+      <view class="item{{ item.completed ? ' completed' : '' }}" wx:for="{{ todos }}" wx:key="{{ index }}" bindtap="toggleTodoHandle" data-index="{{ index }}">
+        <!-- completed: success, todo: circle -->
+        <icon class="checkbox" type="{{ item.completed ? 'success' : 'circle' }}"/>
+        <text class="name">{{ item.name }}</text>
+        <text class="ddl">{{ item.time }}</text>
+        <icon class="remove" type="clear" size="16" catchtap="removeTodoHandle" data-index="{{ index }}"/>
+      </view>
+    </view>
+    <view class="footer">
+      <text class="btn" bindtap="toggleAllHandle">全选</text>
+      <text wx:if="{{ leftCount }}">剩余{{ leftCount }}项</text>
+      <text class="btn" wx:if="{{ todos.length > leftCount }}" bindtap="clearCompletedHandle">清除完成项</text>
+    </view>
+  </block>
+  <block wx:else>
+    <view class="empty">
+      <text class="title">Congratulations!</text>
+      <text class="content">There's no more work left.</text>
+    </view>
+  </block>
+</view>
