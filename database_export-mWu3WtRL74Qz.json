@@ -1,0 +1,4 @@
+{"ddl":{"$date":"2020-07-30T02:00:00.000Z"},"personChrg":"张三","taskDiscrpt":"任务4","status":"已完成","_openid":"ddd"}
+{"ddl":{"$date":"2020-08-01T16:00:00.000Z"},"personChrg":"张三","taskDiscrpt":"任务3","status":"未完成","_openid":"ddd"}
+{"_id":"cb1a2f465f226985000ec0763cd4dd26","ddl":{"$date":"2020-07-30T02:00:00.000Z"},"personChrg":"张三","taskDiscrpt":"任务2","status":"已完成","_openid":"ddd"}
+{"_id":"d1cc6d125f22691a000c124702b2aa38","ddl":{"$date":"2020-08-01T16:00:00.000Z"},"personChrg":"李四","taskDiscrpt":"任务1","status":"未完成","_openid":"ddd"}

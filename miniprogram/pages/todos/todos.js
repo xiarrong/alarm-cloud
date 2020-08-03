@@ -36,6 +36,8 @@ for (let i = 0; i < 60; i++) {
   }
   minutes.push("" + i);
 }
+const db = wx.cloud.database() // 连接数据库
+
 Page({
   data: {
     input: '',
@@ -58,28 +60,63 @@ Page({
   },
 
   load: function () {
-    var todos = wx.getStorageSync('todo_list')
-    if (todos) {
-      var leftCount = todos.filter(function (item) {
-        return !item.completed
-      }).length
-      this.setData({ todos: todos, leftCount: leftCount })
-    }
+    // 载入本地存储的TODOlist
+    // var todos = wx.getStorageSync('todo_list')
+    // if (todos) {
+    //   var leftCount = todos.filter(function (item) {
+    //     return !item.completed
+    //   }).length
+    //   this.setData({ todos: todos, leftCount: leftCount })
+    // }
+    // 载入数据库task
+    this.loadDatabase()
+    // 载入log
     var logs = wx.getStorageSync('todo_logs')
     if (logs) {
       this.setData({ logs: logs })
     }
   },
 
+  loadDatabase: function () {
+    // 载入数据库中的未完成task
+    db.collection("task").where({
+      personChrg: "张三",
+      status: "未完成"
+    }).get().then( res => {
+      console.log(res)
+      for(var i = 0; i < res.data.length; i++){
+        var ddldate = res.data[i].ddl
+        // console.log(ddldate.toString())
+        var year = ddldate.getFullYear(), month = ddldate.getMonth()+1, day = ddldate.getDate();
+        var hour = ddldate.getHours(), minute = ddldate.getUTCMinutes()
+        if (month < 10) month = "0" + month
+        if (day < 10) day = "0" + day
+        if (hour < 10) hour = "0" + hour
+        if (minute < 10) minute = "0" + minute
+        // console.log("time", year, month, day, hour, minute)
+        var ddltime = year + '-' + month + '-' + day + ' ' + hour + ':' + minute
+        var todos = this.data.todos
+        todos.push({
+          _id: res.data[i]._id,
+          name: res.data[i].taskDiscrpt,
+          completed: false,
+          time: ddltime
+        })
+        this.setData({ todos: todos, leftCount: this.data.leftCount+1 })
+      }
+    })
+  },
+
   onLoad: function () {
     this.load()
     var nowDate = new Date();
     // console.log(1,nowDate)
-    var year = nowDate.getFullYear(), month = (nowDate.getMonth()+1)%12, day = nowDate.getDay();
+    // 初始滑动日期选择器
+    var year = nowDate.getFullYear(), month = (nowDate.getMonth()+2), day = nowDate.getDate();
     var hour = nowDate.getHours(), minute = nowDate.getMinutes()
     if(month == 0) month = 12
-    // console.log(year, month, day)
-    var index = [year, month, day, hour, minute]
+    console.log("onload", year, month, day)
+    var index = [0, month-1, day-1, hour, minute]
     this.setData({
       multiIndex: index,
       disable: true,
@@ -90,20 +127,37 @@ Page({
   },
 
   inputChangeHandle: function (e) {
+    // disabled设置
     if(e.detail.value.length > 0) this.setData({ input_length: true })
     else this.setData({ input_length: false })
     this.setData({ disable: !(this.data.input_length & this.data.time_length) })
     console.log("input",this.data.disable, this.data.input_length, this.data.time_length)
-    
+    // 输入任务内容
     this.setData({ input: e.detail.value })
   },
 
   addTodoHandle: function (e) {
+    // 更新到TODO list
     if (!this.data.input || !this.data.input.trim()) return
     var todos = this.data.todos
-    todos.push({ name: this.data.input, completed: false, time: this.data.time })
+    var _id = ""
+    // 添加到database task
+    db.collection("task").add({
+      data:{
+        taskDiscrpt: this.data.input,
+        status: "未完成",
+        ddl: new Date(this.data.time),
+        personChrg: "张三"
+      }
+    }).then(res => {
+      console.log(res)
+      _id = res._id
+    })
+    todos.push({ _id: _id, name: this.data.input, completed: false, time: this.data.time })
+    // 更新log list
     var logs = this.data.logs
     logs.push({ timestamp: new Date(), action: '添加', name: this.data.input, time: this.data.time })
+
     this.setData({
       input: '',
       todos: todos,
@@ -128,10 +182,21 @@ Page({
       name: todos[index].name,
       time: todos[index].time
     })
+    
     this.setData({
       todos: todos,
       leftCount: this.data.leftCount + (todos[index].completed ? -1 : 1),
       logs: logs
+    })
+    // 修改数据库task
+    var todostatus = ""
+    var id = todos[index]._id
+    if(todos[index].completed) todostatus = "已完成"
+    else todostatus = "未完成"
+    db.collection("task").doc(id).update({
+      data:{ status: todostatus }
+    }).then(res => {
+      console.log(res)
     })
     this.save()
   },
@@ -147,14 +212,32 @@ Page({
       leftCount: this.data.leftCount - (remove.completed ? 0 : 1),
       logs: logs
     })
+    var id = remove._id
+    var todostatus = ""
+    if(remove.completed) todostatus = "已完成删除"
+    else todostatus = "未完成删除"
+    db.collection("task").doc(id).update({
+      data:{ status: todostatus }
+    }).then(res => {
+      console.log(res)
+    })
     this.save()
   },
 
   toggleAllHandle: function (e) {
     this.data.allCompleted = !this.data.allCompleted
     var todos = this.data.todos
+    var todostatus = ""
+    if(this.data.allCompleted) todostatus = "已完成删除"
+    else todostatus = "未完成删除"
     for (var i = todos.length - 1; i >= 0; i--) {
       todos[i].completed = this.data.allCompleted
+      var id = todos[i]._id
+      db.collection("task").doc(id).update({
+        data:{ status: todostatus }
+      }).then(res => {
+        console.log(res)
+      })
     }
     var logs = this.data.logs
     logs.push({
@@ -181,12 +264,13 @@ Page({
     logs.push({
       timestamp: new Date(),
       action: '清除',
-      name: '完成所有事项',
+      name: '所有完成事项',
       time: '...'
     })
     this.setData({ todos: remains, logs: logs })
     this.save()
   },
+
   // 获取日期时间
   bindMultiPickerChange: function(e) {
     if(e.detail.value.length > 0) this.setData({ time_length: true })
@@ -206,9 +290,10 @@ Page({
     const day = this.data.multiArray[2][index[2]];
     const hour = this.data.multiArray[3][index[3]];
     const minute = this.data.multiArray[4][index[4]];
-    // console.log(`${year}-${month}-${day}-${hour}-${minute}`);
+    console.log("input",`${year}-${month}-${day}-${hour}-${minute}`);
     this.setData({
-      time: year + '-' + month + '-' + day + ' ' + hour + ':' + minute
+      time: year + '-' + month + '-' + day + ' ' + hour + ':' + minute,
+      // timeDate: new Date(year, month, day, hour, minute)
     })
     // console.log(this.data.time);
   },

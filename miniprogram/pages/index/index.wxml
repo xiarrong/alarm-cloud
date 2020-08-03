@@ -1,7 +1,7 @@
 <!--index.wxml-->
 <!-- <view>index</view> -->
 
-<button type="primary" bindtap="getData">Get Data</button>
+<button type="primary" bindtap="getData">subscribe</button>
 
-<view wx:for="{{dataObj}}">{{item.taskDiscrpt}}   {{item.personChrg}}  {{item.status}}</view>
-<view wx:for="{{}}"></view>
+<view wx:for="{{dataObj}}">{{item.name}} {{item.action}} </view>
+<!-- <view wx:for="{{}}"></view> -->

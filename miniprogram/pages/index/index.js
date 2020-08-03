@@ -6,21 +6,17 @@ Page({
    * 页面的初始数据
    */
   data: {
-    dataObj: ""
+    dataObj: []
   },
 
   getData(){
     //   console.log(1)
-    db.collection("task").where({
-        personChrg: "张三"
-    })
-    .get({
-        success: res=>{
-           console.log(res)
-            this.setData({
-                dataObj: res.data
-            })
-        }
+    db.collection("lll").where({
+      user: "张三"
+      // status: "未完成"
+    }).get().then( res => {
+      this.setData({ dataObj: res.data })
+      console.log(res)
     })
 
   },
